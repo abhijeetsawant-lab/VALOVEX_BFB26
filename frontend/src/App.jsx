@@ -5,9 +5,13 @@ import ResponseCard, { ResponseCardSkeleton } from './components/ResponseCard'
 import HistoryPanel from './components/HistoryPanel'
 import TypingInput from './components/TypingInput'
 import SchemeBrowser from './pages/SchemeBrowser'
+import AboutPage from './pages/AboutPage'
+import HelpPage from './pages/HelpPage'
 import EligibilityChecker from './components/EligibilityChecker'
 import DemoMode from './components/DemoMode'
 import Modal from './components/Modal'
+import StatsBar from './components/StatsBar'
+import FloatingParticles from './components/FloatingParticles'
 
 const API_BASE = '/api'
 
@@ -45,7 +49,7 @@ export default function App() {
   const [response, setResponse]       = useState(null)
   const [error, setError]             = useState(null)
   const [history, setHistory]         = useState([])
-  const [view, setView]               = useState('main')   // 'main' | 'schemes' | 'eligibility'
+  const [view, setView]               = useState('main')   // 'main' | 'schemes' | 'about' | 'help' | 'eligibility'
   const [demoMode, setDemoMode]       = useState(false)
   const [isOnline, setIsOnline]       = useState(navigator.onLine)
 
@@ -141,8 +145,33 @@ export default function App() {
     )
   }
 
+  // ── About page view ──────────────────────────────────────────────────────
+  if (view === 'about') {
+    return (
+      <div className="app">
+        <FloatingParticles />
+        <div className="main-content">
+          <AboutPage onBack={() => setView('main')} />
+        </div>
+      </div>
+    )
+  }
+
+  // ── Help page view ───────────────────────────────────────────────────────
+  if (view === 'help') {
+    return (
+      <div className="app">
+        <FloatingParticles />
+        <div className="main-content">
+          <HelpPage onBack={() => setView('main')} />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="app">
+      <FloatingParticles />
       {/* ── Offline banner ────────────────────────────────────────── */}
       {!isOnline && (
         <div className="offline-banner" role="alert">
@@ -172,7 +201,13 @@ export default function App() {
           <button id="schemes-nav-btn" className="schemes-nav-btn" onClick={() => setView('schemes')}>
             📋 Schemes
           </button>
-          <span className="beta-badge">v1.3</span>
+          <button className="schemes-nav-btn" onClick={() => setView('about')}>
+            ℹ️ About
+          </button>
+          <button className="schemes-nav-btn" onClick={() => setView('help')}>
+            ❓ Help
+          </button>
+          <span className="beta-badge">v2.0</span>
         </div>
       </header>
 
@@ -193,6 +228,9 @@ export default function App() {
       {/* ── Main ─────────────────────────────────────────────────── */}
       <main className="main-content" id="main">
         <LanguageSelector selected={language} onSelect={handleLangChange} />
+
+        {/* Stats bar */}
+        {!response && !isProcessing && <StatsBar />}
 
         {/* Eligibility checker CTA */}
         {!response && !isProcessing && (
@@ -291,6 +329,7 @@ export default function App() {
 
       <footer className="app-footer">
         <p className="footer-text">Powered by Sarvam AI · Google Gemini · Made with ❤️ for Bharat</p>
+        <p className="footer-text" style={{ marginTop: '4px', fontSize: '0.6rem' }}>Team VALOVEX · MIT BFB 26 Hackathon · 35+ Government Schemes</p>
         <div className="footer-flag">
           <span className="flag-saffron">▬▬▬</span>
           <span className="flag-white">▬▬▬</span>

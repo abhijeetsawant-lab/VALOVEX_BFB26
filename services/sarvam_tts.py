@@ -25,7 +25,7 @@ async def synthesize_speech(text: str, language_code: str) -> str:
             "pace": 1.0,
             "loudness": 1.5,
             "enable_preprocessing": True,
-            "model": "bulbul:v1",
+            "model": "bulbul:v2",
         }
 
         async with httpx.AsyncClient(timeout=30.0) as client:

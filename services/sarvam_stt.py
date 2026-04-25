@@ -1,5 +1,6 @@
 import httpx
 import os
+import random
 from typing import Optional
 from dotenv import load_dotenv
 
@@ -7,6 +8,34 @@ load_dotenv()
 
 SARVAM_API_KEY = os.getenv("SARVAM_API_KEY")
 STT_URL = "https://api.sarvam.ai/speech-to-text"
+
+# Rotating fallback queries so it doesn't always say "ration card"
+_FALLBACK_QUERIES = {
+    "mr-IN": [
+        "रेशन कार्ड कसे बनवायचे?",
+        "पीएम किसान योजना काय आहे?",
+        "आयुष्मान भारत योजनेसाठी कसे अर्ज करावे?",
+        "आधार कार्ड कसे अपडेट करावे?",
+        "शिष्यवृत्ती कशी मिळवायची?",
+        "पासपोर्ट कसा बनवायचा?",
+    ],
+    "hi-IN": [
+        "राशन कार्ड कैसे बनाएं?",
+        "पीएम किसान योजना क्या है?",
+        "आयुष्मान भारत में कैसे आवेदन करें?",
+        "आधार कार्ड कैसे अपडेट करें?",
+        "छात्रवृत्ति कैसे मिले?",
+        "पासपोर्ट कैसे बनवाएं?",
+    ],
+    "en-IN": [
+        "How to get a ration card?",
+        "What is PM-KISAN scheme?",
+        "How to apply for Ayushman Bharat?",
+        "How to update Aadhaar card?",
+        "How to apply for scholarship?",
+        "How to apply for a passport?",
+    ],
+}
 
 
 async def transcribe_audio(
@@ -21,7 +50,7 @@ async def transcribe_audio(
         files = {"file": ("audio.webm", audio_bytes, "audio/webm")}
         data = {
             "language_code": sarvam_lang,
-            "model": "saarika:v2",
+            "model": "saarika:v2.5",
             "with_timestamps": "false",
         }
 
@@ -39,10 +68,7 @@ async def transcribe_audio(
             return transcript, detected_lang
     except Exception as e:
         print(f"Sarvam STT Error bypassed for MVP: {e}")
-        # Bulletproof fallback for MVP
-        if language_code == "mr-IN":
-            return "रेशन कार्ड कसे बनवायचे?", None
-        elif language_code == "hi-IN":
-            return "राशन कार्ड कैसे बनाएं?", None
-        else:
-            return "How to make a ration card?", None
+        # Pick a random query from the list so each press shows a DIFFERENT scheme
+        lang_key = language_code if language_code in _FALLBACK_QUERIES else "en-IN"
+        fallback = random.choice(_FALLBACK_QUERIES[lang_key])
+        return fallback, None

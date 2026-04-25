@@ -46,17 +46,17 @@ export default function ResponseCard({
   const actionButtons = [
     {
       id: 'action-docs', icon: '📄', label: 'Required\nDocuments',
-      onClick: () => hasScheme ? setModal('docs') : alert('📄 Document list coming in Phase 3.'),
+      onClick: () => hasScheme ? setModal('docs') : null,
       active: hasScheme,
     },
     {
       id: 'action-apply', icon: '🔗', label: 'Apply\nOnline',
-      onClick: () => hasScheme ? window.open(matchedScheme.apply_url, '_blank', 'noopener,noreferrer') : alert('🔗 Apply links coming in Phase 3.'),
+      onClick: () => hasScheme ? window.open(matchedScheme.apply_url, '_blank', 'noopener,noreferrer') : null,
       active: hasScheme,
     },
     {
       id: 'action-eligibility', icon: '✅', label: 'Eligibility\nCheck',
-      onClick: () => hasScheme ? setModal('eligibility') : alert('✅ Eligibility checker available from the main screen.'),
+      onClick: () => hasScheme ? setModal('eligibility') : null,
       active: hasScheme,
     },
   ]

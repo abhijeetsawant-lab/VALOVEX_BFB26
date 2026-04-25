@@ -52,22 +52,69 @@ async def get_llm_response(
         system_instruction = _SYSTEM_GENERIC.format(language=language_name)
 
     try:
-        # Try to use Gemini
         model = genai.GenerativeModel(model_name="gemini-1.5-flash")
         prompt = f"{system_instruction}\n\nUser Question:\n{transcript}"
         response = model.generate_content(prompt)
         return response.text.strip()
     except Exception as e:
-        # BULLETPROOF FALLBACK FOR MVP DEMO
-        # If the API key is invalid or model not found, return a simulated response
         print(f"Gemini API Error bypassed for MVP: {e}")
-        
-        if scheme_context:
-            return f"Based on government guidelines:\n{scheme_context}\n\nPlease visit your nearest CSC center with your documents to apply."
+        # Smart fallback — use scheme data to build a real answer
+        return _build_offline_response(transcript, language_code, scheme_context)
+
+
+def _build_offline_response(transcript: str, language_code: str, scheme_context: Optional[str]) -> str:
+    """Build a useful response from local scheme data when Gemini is unavailable."""
+    from services.scheme_matcher import match_scheme, get_scheme
+
+    scheme_id = match_scheme(transcript)
+    scheme = get_scheme(scheme_id) if scheme_id else None
+
+    if scheme:
+        lang = language_code[:2]
+        name = scheme.get(f"name_{lang}", scheme["name"])
+        steps_key = f"steps_{lang}" if f"steps_{lang}" in scheme else "steps_en"
+        steps = scheme.get(steps_key, scheme.get("steps_en", []))
+        docs = scheme.get("documents", [])
+        benefit = scheme.get("benefit", "")
+        eligibility = scheme.get("eligibility", "")
+        url = scheme.get("apply_url", "")
+
+        parts = [f"📋 {name}\n"]
+        if benefit:
+            parts.append(f"💰 Benefit: {benefit}\n")
+        if eligibility:
+            parts.append(f"✅ Eligibility: {eligibility}\n")
+        if steps:
+            parts.append("📝 Steps to Apply:")
+            for i, step in enumerate(steps[:6], 1):
+                parts.append(f"  {i}. {step}")
+        if docs:
+            parts.append(f"\n📄 Documents: {', '.join(docs[:5])}")
+        if url:
+            parts.append(f"\n🔗 Apply: {url}")
+        return "\n".join(parts)
+    else:
+        if language_code == "mr-IN":
+            return (
+                "नमस्कार! NaamSeva मध्ये आपले स्वागत आहे.\n\n"
+                "तुमच्या प्रश्नासाठी, कृपया खालील पर्याय वापरा:\n"
+                "1. 📋 'Schemes' बटण दाबा — 25+ सरकारी योजना पहा\n"
+                "2. ✅ 'Check My Eligibility' — तुम्हाला कोणत्या योजना लागू होतात ते तपासा\n"
+                "3. कृपया तुमचा प्रश्न अधिक विशिष्ट करा (उदा: 'रेशन कार्ड', 'शिष्यवृत्ती', 'आधार')"
+            )
+        elif language_code == "hi-IN":
+            return (
+                "नमस्ते! NaamSeva में आपका स्वागत है.\n\n"
+                "आपके प्रश्न के लिए:\n"
+                "1. 📋 'Schemes' बटन दबाएं — 25+ सरकारी योजनाएं देखें\n"
+                "2. ✅ 'Check My Eligibility' — कौन सी योजनाएं आप पर लागू हैं\n"
+                "3. अपना प्रश्न और विशिष्ट करें (जैसे: 'राशन कार्ड', 'छात्रवृत्ति', 'आधार')"
+            )
         else:
-            if language_code == "mr-IN":
-                return "1. कृपया अधिक माहितीसाठी तुमच्या जवळच्या CSC केंद्राला भेट द्या.\n2. आवश्यक कागदपत्रे सोबत ठेवा."
-            elif language_code == "hi-IN":
-                return "1. कृपया अधिक जानकारी के लिए अपने नजदीकी CSC केंद्र पर जाएं।\n2. अपने आवश्यक दस्तावेज साथ रखें।"
-            else:
-                return "1. Please visit your nearest CSC center for detailed information.\n2. Keep your required documents ready for verification."
+            return (
+                "Hello! Welcome to NaamSeva.\n\n"
+                "For your query, please try:\n"
+                "1. 📋 Click 'Schemes' — browse 25+ government schemes\n"
+                "2. ✅ Click 'Check My Eligibility' — find schemes you qualify for\n"
+                "3. Try a specific query like 'ration card', 'scholarship', 'aadhaar update'"
+            )
